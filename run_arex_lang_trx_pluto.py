@@ -5,7 +5,9 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 # GNU Radio Python Flow Graph
-# Title: Arex Lang Trx Pluto
+# Title: AREX GW Demonstration
+# Author: Chris Thompson VE2TCP
+# Description: Based on the Langstone radio by G4EML
 # GNU Radio version: 3.10.1.1
 
 from gnuradio import analog
@@ -26,14 +28,16 @@ import os
 import errno
 
 
+
 class arex_lang_trx_pluto(gr.top_block):
 
     def __init__(self):
-        gr.top_block.__init__(self, "Arex Lang Trx Pluto", catch_exceptions=True)
+        gr.top_block.__init__(self, "AREX GW Demonstration", catch_exceptions=True)
 
         ##################################################
         # Variables
         ##################################################
+
         plutoip=os.environ.get('PLUTO_IP')
         if plutoip==None :
           plutoip='pluto.local'
@@ -105,7 +109,6 @@ class arex_lang_trx_pluto(gr.top_block):
         self.blocks_multiply_const_vxx_2_1 = blocks.multiply_const_ff(Rx_Mode==5)
         self.blocks_multiply_const_vxx_2_0 = blocks.multiply_const_ff((Rx_Mode==4) * 0.2)
         self.blocks_multiply_const_vxx_2 = blocks.multiply_const_ff(Rx_Mode<4)
-        self.blocks_multiply_const_vxx_1_0 = blocks.multiply_const_ff(Rx_Monitor)
         self.blocks_multiply_const_vxx_1 = blocks.multiply_const_ff((AFGain/100.0) *  (not Rx_Mute))
         self.blocks_multiply_const_vxx_0_0 = blocks.multiply_const_ff(FMMIC/5.0)
         self.blocks_multiply_const_vxx_0 = blocks.multiply_const_ff((MicGain)*(int(Tx_Mode==0)) + (MicGain)*(int(Tx_Mode==1)) + (AMMIC/10.0)*(int(Tx_Mode==5)) )
@@ -150,8 +153,7 @@ class arex_lang_trx_pluto(gr.top_block):
                 100,
                 window.WIN_HAMMING,
                 6.76))
-        self.audio_source_0 = audio.source(48000, "plughw:3,0,1", False)
-        self.audio_sink_0_0 = audio.sink(48000, "plughw:1,0", False)
+        self.audio_source_0 = audio.source(48000, "plughw:3,0,1", True)
         self.audio_sink_0 = audio.sink(48000, "plughw:3,0,0", False)
         self.analog_sig_source_x_1_0 = analog.sig_source_f(48000, analog.GR_SIN_WAVE, CTCSS/10.0, 0.15 * (CTCSS >0), 0, 0)
         self.analog_sig_source_x_1 = analog.sig_source_f(48000, analog.GR_COS_WAVE, 1750, 1.0*ToneBurst, 0, 0)
@@ -209,7 +211,6 @@ class arex_lang_trx_pluto(gr.top_block):
         self.connect((self.blocks_multiply_const_vxx_0, 0), (self.blocks_add_const_vxx_0_0, 0))
         self.connect((self.blocks_multiply_const_vxx_0_0, 0), (self.blocks_add_xx_0, 1))
         self.connect((self.blocks_multiply_const_vxx_1, 0), (self.low_pass_filter_0, 0))
-        self.connect((self.blocks_multiply_const_vxx_1_0, 0), (self.audio_sink_0_0, 0))
         self.connect((self.blocks_multiply_const_vxx_2, 0), (self.blocks_add_xx_1_0, 0))
         self.connect((self.blocks_multiply_const_vxx_2_0, 0), (self.blocks_add_xx_1, 1))
         self.connect((self.blocks_multiply_const_vxx_2_1, 0), (self.blocks_add_xx_1_0, 1))
@@ -221,7 +222,6 @@ class arex_lang_trx_pluto(gr.top_block):
         self.connect((self.freq_xlating_fir_filter_xxx_0, 0), (self.band_pass_filter_0, 0))
         self.connect((self.iio_pluto_source_0, 0), (self.freq_xlating_fir_filter_xxx_0, 0))
         self.connect((self.low_pass_filter_0, 0), (self.audio_sink_0, 0))
-        self.connect((self.low_pass_filter_0, 0), (self.blocks_multiply_const_vxx_1_0, 0))
         self.connect((self.rational_resampler_xxx_0, 0), (self.iio_pluto_sink_0, 0))
 
 
@@ -283,7 +283,6 @@ class arex_lang_trx_pluto(gr.top_block):
 
     def set_Rx_Monitor(self, Rx_Monitor):
         self.Rx_Monitor = Rx_Monitor
-        self.blocks_multiply_const_vxx_1_0.set_k(self.Rx_Monitor)
 
     def get_Rx_Mode(self):
         return self.Rx_Mode
@@ -385,6 +384,8 @@ class arex_lang_trx_pluto(gr.top_block):
         self.AFGain = AFGain
         self.blocks_multiply_const_vxx_1.set_k((self.AFGain/100.0) *  (not self.Rx_Mute))
 
+
+        
 #######################################################
 # Manually inserted Functions
 # to provide support for Piped commands
@@ -490,5 +491,6 @@ def main(top_block_cls=arex_lang_trx_pluto, options=None):
     tb.wait()
 
 #########################################################
+
 if __name__ == '__main__':
     main()

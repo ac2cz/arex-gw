@@ -1,12 +1,12 @@
 options:
   parameters:
-    author: ''
+    author: Chris Thompson VE2TCP
     catch_exceptions: 'True'
     category: '[GRC Hier Blocks]'
     cmake_opt: ''
     comment: ''
     copyright: ''
-    description: ''
+    description: Based on the Langstone radio by G4EML
     gen_cmake: 'On'
     gen_linking: dynamic
     generate_options: no_gui
@@ -22,7 +22,7 @@ options:
     run_options: prompt
     sizing_mode: fixed
     thread_safe_setters: ''
-    title: ''
+    title: AREX GW Demonstration
     window_size: 3000,2000
   states:
     bus_sink: false
@@ -508,7 +508,7 @@ blocks:
     bus_structure: null
     coordinate: [1752, 460.0]
     rotation: 0
-    state: enabled
+    state: disabled
 - name: audio_source_0
   id: audio_source
   parameters:
@@ -519,7 +519,7 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     num_outputs: '1'
-    ok_to_block: 'False'
+    ok_to_block: 'True'
     samp_rate: '48000'
   states:
     bus_sink: false
@@ -862,7 +862,7 @@ blocks:
     bus_structure: null
     coordinate: [1688, 388.0]
     rotation: 0
-    state: enabled
+    state: disabled
 - name: blocks_multiply_const_vxx_2
   id: blocks_multiply_const_vxx
   parameters:
