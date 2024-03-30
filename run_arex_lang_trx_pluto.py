@@ -28,7 +28,6 @@ import os
 import errno
 
 
-
 class arex_lang_trx_pluto(gr.top_block):
 
     def __init__(self):
@@ -37,7 +36,6 @@ class arex_lang_trx_pluto(gr.top_block):
         ##################################################
         # Variables
         ##################################################
-
         plutoip=os.environ.get('PLUTO_IP')
         if plutoip==None :
           plutoip='pluto.local'
@@ -153,8 +151,8 @@ class arex_lang_trx_pluto(gr.top_block):
                 100,
                 window.WIN_HAMMING,
                 6.76))
-        self.audio_source_0 = audio.source(48000, "plughw:3,0,1", True)
-        self.audio_sink_0 = audio.sink(48000, "plughw:3,0,0", False)
+        self.audio_source_0 = audio.source(48000, "plughw:0,0,1", True)
+        self.audio_sink_0 = audio.sink(48000, "plughw:0,0,0", False)
         self.analog_sig_source_x_1_0 = analog.sig_source_f(48000, analog.GR_SIN_WAVE, CTCSS/10.0, 0.15 * (CTCSS >0), 0, 0)
         self.analog_sig_source_x_1 = analog.sig_source_f(48000, analog.GR_COS_WAVE, 1750, 1.0*ToneBurst, 0, 0)
         self.analog_sig_source_x_0 = analog.sig_source_c(48000, analog.GR_COS_WAVE, 0, 1, 0, 0)
@@ -491,6 +489,5 @@ def main(top_block_cls=arex_lang_trx_pluto, options=None):
     tb.wait()
 
 #########################################################
-
 if __name__ == '__main__':
     main()
