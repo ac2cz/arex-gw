@@ -36,7 +36,7 @@ class arex_lang_trx_pluto(gr.top_block):
         # Variables
         ##################################################
         self.Tx_Mode = Tx_Mode = 4
-        self.Tx_LO = Tx_LO = 437800000
+        self.Tx_LO = Tx_LO = 3483400000
         self.Tx_Gain = Tx_Gain = 0
         self.Tx_Filt_Low = Tx_Filt_Low = -7500
         self.Tx_Filt_High = Tx_Filt_High = 7500
@@ -44,7 +44,7 @@ class arex_lang_trx_pluto(gr.top_block):
         self.Rx_Mute = Rx_Mute = False
         self.Rx_Monitor = Rx_Monitor = False
         self.Rx_Mode = Rx_Mode = 4
-        self.Rx_LO = Rx_LO = 145900000
+        self.Rx_LO = Rx_LO = 5659900000
         self.Rx_Gain = Rx_Gain = 30
         self.Rx_Filt_Low = Rx_Filt_Low = -7500
         self.Rx_Filt_High = Rx_Filt_High = 7500
@@ -145,13 +145,14 @@ class arex_lang_trx_pluto(gr.top_block):
                 100,
                 window.WIN_HAMMING,
                 6.76))
-        self.audio_source_0 = audio.source(48000, "plughw:0,0,1", True)
-        self.audio_sink_0 = audio.sink(48000, "plughw:0,0,0", False)
+        self.audio_source_0 = audio.source(48000, "plughw:2,0,1", True)
+        self.audio_sink_0 = audio.sink(48000, "plughw:2,0,0", False)
         self.analog_sig_source_x_1_0 = analog.sig_source_f(48000, analog.GR_SIN_WAVE, CTCSS/10.0, 0.15 * (CTCSS >0), 0, 0)
         self.analog_sig_source_x_1 = analog.sig_source_f(48000, analog.GR_COS_WAVE, 1750, 1.0*ToneBurst, 0, 0)
         self.analog_sig_source_x_0 = analog.sig_source_c(48000, analog.GR_COS_WAVE, 0, 1, 0, 0)
         self.analog_rail_ff_0_0 = analog.rail_ff(-0.99, 0.99)
         self.analog_rail_ff_0 = analog.rail_ff(-1, 1)
+        self.analog_pll_carriertracking_cc_0 = analog.pll_carriertracking_cc(0.02, 1.9635, -1.9635)
         self.analog_nbfm_tx_0 = analog.nbfm_tx(
         	audio_rate=48000,
         	quad_rate=48000,
@@ -177,6 +178,7 @@ class arex_lang_trx_pluto(gr.top_block):
         self.connect((self.analog_const_source_x_0, 0), (self.blocks_float_to_complex_0_0, 1))
         self.connect((self.analog_nbfm_rx_0, 0), (self.blocks_multiply_const_vxx_2_0, 0))
         self.connect((self.analog_nbfm_tx_0, 0), (self.blocks_multiply_const_vxx_3, 0))
+        self.connect((self.analog_pll_carriertracking_cc_0, 0), (self.band_pass_filter_0, 0))
         self.connect((self.analog_rail_ff_0, 0), (self.band_pass_filter_1, 0))
         self.connect((self.analog_rail_ff_0_0, 0), (self.blocks_float_to_complex_0_0, 0))
         self.connect((self.analog_sig_source_x_0, 0), (self.blocks_multiply_xx_0, 1))
@@ -211,7 +213,7 @@ class arex_lang_trx_pluto(gr.top_block):
         self.connect((self.blocks_multiply_const_vxx_4, 0), (self.blocks_add_xx_2, 1))
         self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_multiply_const_vxx_4, 0))
         self.connect((self.blocks_mute_xx_0_0_0, 0), (self.rational_resampler_xxx_0, 0))
-        self.connect((self.freq_xlating_fir_filter_xxx_0, 0), (self.band_pass_filter_0, 0))
+        self.connect((self.freq_xlating_fir_filter_xxx_0, 0), (self.analog_pll_carriertracking_cc_0, 0))
         self.connect((self.iio_pluto_source_0, 0), (self.freq_xlating_fir_filter_xxx_0, 0))
         self.connect((self.low_pass_filter_0, 0), (self.audio_sink_0, 0))
         self.connect((self.rational_resampler_xxx_0, 0), (self.iio_pluto_sink_0, 0))

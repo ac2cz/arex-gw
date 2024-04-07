@@ -181,7 +181,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '145900000'
+    value: '5659900000'
   states:
     bus_sink: false
     bus_source: false
@@ -276,8 +276,9 @@ blocks:
 - name: Tx_LO
   id: variable
   parameters:
-    comment: ''
-    value: '437800000'
+    comment: "TX Freq of 3483400000 will be 10.4502 GHz \non third harmonic.\n\nTransmit\
+      \ on 700200000 to calibrate."
+    value: '3483400000'
   states:
     bus_sink: false
     bus_source: false
@@ -375,6 +376,24 @@ blocks:
     coordinate: [904, 976]
     rotation: 0
     state: enabled
+- name: analog_pll_carriertracking_cc_0
+  id: analog_pll_carriertracking_cc
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    max_freq: '1.9635'
+    maxoutbuf: '0'
+    min_freq: '-1.9635'
+    minoutbuf: '0'
+    w: '0.02'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [216, 100.0]
+    rotation: 0
+    state: true
 - name: analog_rail_ff_0
   id: analog_rail_ff
   parameters:
@@ -481,7 +500,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    device_name: '"plughw:0,0,0"'
+    device_name: '"plughw:2,0,0"'
     num_inputs: '1'
     ok_to_block: 'False'
     samp_rate: '48000'
@@ -515,7 +534,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    device_name: '"plughw:0,0,1"'
+    device_name: '"plughw:2,0,1"'
     maxoutbuf: '0'
     minoutbuf: '0'
     num_outputs: '1'
@@ -1238,7 +1257,7 @@ blocks:
     legend: 'True'
     maxoutbuf: '0'
     minoutbuf: '0'
-    name: '"RX"'
+    name: '"IF"'
     nconnections: '1'
     norm_window: 'False'
     showports: 'False'
@@ -1377,6 +1396,7 @@ connections:
 - [analog_nbfm_rx_0, '0', blocks_multiply_const_vxx_2_0, '0']
 - [analog_nbfm_rx_0, '0', qtgui_freq_sink_x_0_0_0, '0']
 - [analog_nbfm_tx_0, '0', blocks_multiply_const_vxx_3, '0']
+- [analog_pll_carriertracking_cc_0, '0', band_pass_filter_0, '0']
 - [analog_rail_ff_0, '0', band_pass_filter_1, '0']
 - [analog_rail_ff_0_0, '0', blocks_float_to_complex_0_0, '0']
 - [analog_sig_source_x_0, '0', blocks_multiply_xx_0, '1']
@@ -1413,7 +1433,7 @@ connections:
 - [blocks_multiply_const_vxx_4, '0', blocks_add_xx_2, '1']
 - [blocks_multiply_xx_0, '0', blocks_multiply_const_vxx_4, '0']
 - [blocks_mute_xx_0_0_0, '0', rational_resampler_xxx_0, '0']
-- [freq_xlating_fir_filter_xxx_0, '0', band_pass_filter_0, '0']
+- [freq_xlating_fir_filter_xxx_0, '0', analog_pll_carriertracking_cc_0, '0']
 - [iio_pluto_source_0, '0', freq_xlating_fir_filter_xxx_0, '0']
 - [iio_pluto_source_0, '0', qtgui_freq_sink_x_0, '0']
 - [low_pass_filter_0, '0', audio_sink_0, '0']
