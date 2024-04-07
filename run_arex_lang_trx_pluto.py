@@ -23,9 +23,10 @@ from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
 from gnuradio import iio
-
+ 
 import os
 import errno
+
 
 
 class arex_lang_trx_pluto(gr.top_block):
@@ -40,7 +41,6 @@ class arex_lang_trx_pluto(gr.top_block):
         if plutoip==None :
           plutoip='pluto.local'
         plutoip='ip:' + plutoip
-
         self.Tx_Mode = Tx_Mode = 4
         self.Tx_LO = Tx_LO = 3483400000
         self.Tx_Gain = Tx_Gain = 0
@@ -151,8 +151,8 @@ class arex_lang_trx_pluto(gr.top_block):
                 100,
                 window.WIN_HAMMING,
                 6.76))
-        self.audio_source_0 = audio.source(48000, "plughw:2,0,1", True)
-        self.audio_sink_0 = audio.sink(48000, "plughw:2,0,0", False)
+        self.audio_source_0 = audio.source(48000, "plughw:0,0,1", True)
+        self.audio_sink_0 = audio.sink(48000, "plughw:0,0,0", False)
         self.analog_sig_source_x_1_0 = analog.sig_source_f(48000, analog.GR_SIN_WAVE, CTCSS/10.0, 0.15 * (CTCSS >0), 0, 0)
         self.analog_sig_source_x_1 = analog.sig_source_f(48000, analog.GR_COS_WAVE, 1750, 1.0*ToneBurst, 0, 0)
         self.analog_sig_source_x_0 = analog.sig_source_c(48000, analog.GR_COS_WAVE, 0, 1, 0, 0)
@@ -385,7 +385,7 @@ class arex_lang_trx_pluto(gr.top_block):
         self.blocks_multiply_const_vxx_1.set_k((self.AFGain/100.0) *  (not self.Rx_Mute))
 
 
-
+        
 #######################################################
 # Manually inserted Functions
 # to provide support for Piped commands
