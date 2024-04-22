@@ -23,10 +23,12 @@ from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
 from gnuradio import iio
+import time
+import threading
+
  
 import os
 import errno
-
 
 
 class arex_lang_trx_pluto(gr.top_block):
@@ -41,6 +43,10 @@ class arex_lang_trx_pluto(gr.top_block):
         if plutoip==None :
           plutoip='pluto.local'
         plutoip='ip:' + plutoip
+        
+        self.rx_mag_level = rx_mag_level = 0
+        self.alsa_audio_source = alsa_audio_source = "plughw:0,0,1"
+        self.alsa_audio_sink = alsa_audio_sink = "plughw:0,0,0"
         self.Tx_Mode = Tx_Mode = 4
         self.Tx_LO = Tx_LO = 3483400000
         self.Tx_Gain = Tx_Gain = 0
@@ -67,6 +73,22 @@ class arex_lang_trx_pluto(gr.top_block):
         ##################################################
         # Blocks
         ##################################################
+        self.blocks_probe_signal_x_0 = blocks.probe_signal_f()
+        def _rx_mag_level_probe():
+          while True:
+
+            val = self.blocks_probe_signal_x_0.level()
+            try:
+              try:
+                self.doc.add_next_tick_callback(functools.partial(self.set_rx_mag_level,val))
+              except AttributeError:
+                self.set_rx_mag_level(val)
+            except AttributeError:
+              pass
+            time.sleep(1.0 / (100))
+        _rx_mag_level_thread = threading.Thread(target=_rx_mag_level_probe)
+        _rx_mag_level_thread.daemon = True
+        _rx_mag_level_thread.start()
         self.rational_resampler_xxx_0 = filter.rational_resampler_ccc(
                 interpolation=11,
                 decimation=1,
@@ -151,8 +173,8 @@ class arex_lang_trx_pluto(gr.top_block):
                 100,
                 window.WIN_HAMMING,
                 6.76))
-        self.audio_source_0 = audio.source(48000, "plughw:0,0,1", True)
-        self.audio_sink_0 = audio.sink(48000, "plughw:0,0,0", False)
+        self.audio_source_0 = audio.source(48000, alsa_audio_source, True)
+        self.audio_sink_0 = audio.sink(48000, alsa_audio_sink, False)
         self.analog_sig_source_x_1_0 = analog.sig_source_f(48000, analog.GR_SIN_WAVE, CTCSS/10.0, 0.15 * (CTCSS >0), 0, 0)
         self.analog_sig_source_x_1 = analog.sig_source_f(48000, analog.GR_COS_WAVE, 1750, 1.0*ToneBurst, 0, 0)
         self.analog_sig_source_x_0 = analog.sig_source_c(48000, analog.GR_COS_WAVE, 0, 1, 0, 0)
@@ -204,6 +226,7 @@ class arex_lang_trx_pluto(gr.top_block):
         self.connect((self.blocks_add_xx_1_0, 0), (self.blocks_float_to_complex_0, 0))
         self.connect((self.blocks_add_xx_2, 0), (self.band_pass_filter_0_0, 0))
         self.connect((self.blocks_complex_to_mag_0, 0), (self.blocks_multiply_const_vxx_2_1, 0))
+        self.connect((self.blocks_complex_to_mag_0, 0), (self.blocks_probe_signal_x_0, 0))
         self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_multiply_const_vxx_2, 0))
         self.connect((self.blocks_complex_to_real_0_0, 0), (self.blocks_multiply_const_vxx_2_1_0, 0))
         self.connect((self.blocks_float_to_complex_0, 0), (self.analog_agc3_xx_0, 0))
@@ -224,6 +247,24 @@ class arex_lang_trx_pluto(gr.top_block):
         self.connect((self.low_pass_filter_0, 0), (self.audio_sink_0, 0))
         self.connect((self.rational_resampler_xxx_0, 0), (self.iio_pluto_sink_0, 0))
 
+
+    def get_rx_mag_level(self):
+        return self.rx_mag_level
+
+    def set_rx_mag_level(self, rx_mag_level):
+        self.rx_mag_level = rx_mag_level
+
+    def get_alsa_audio_source(self):
+        return self.alsa_audio_source
+
+    def set_alsa_audio_source(self, alsa_audio_source):
+        self.alsa_audio_source = alsa_audio_source
+
+    def get_alsa_audio_sink(self):
+        return self.alsa_audio_sink
+
+    def set_alsa_audio_sink(self, alsa_audio_sink):
+        self.alsa_audio_sink = alsa_audio_sink
 
     def get_Tx_Mode(self):
         return self.Tx_Mode
@@ -385,26 +426,31 @@ class arex_lang_trx_pluto(gr.top_block):
         self.blocks_multiply_const_vxx_1.set_k((self.AFGain/100.0) *  (not self.Rx_Mute))
 
 
-        
 #######################################################
 # Manually inserted Functions
 # to provide support for Piped commands
 #######################################################
 def docommands(tb):
   try:
-    os.mkfifo("/tmp/arex_gw_trx")
+    os.mkfifo("/tmp/arex_gw_rx") # Commands Received by Radio
+  except OSError as oe:
+    if oe.errno != errno.EEXIST:
+      raise    
+  try:
+    os.mkfifo("/tmp/arex_gw_tx") # Commands Sent to Radio
   except OSError as oe:
     if oe.errno != errno.EEXIST:
       raise    
   ex=False
   lastbase=0
   while not ex:
-    fifoin=open("/tmp/arex_gw_trx",'r')
+    fifoin=open("/tmp/arex_gw_rx",'r')
     while True:
        try:
         with fifoin as filein:
          for line in filein:
            line=line.strip()
+           #print(line);
            if line[0]=='Q':
               ex=True                  
            if line[0]=='U':
@@ -475,6 +521,10 @@ def docommands(tb):
            if line[0]=='W':
               value=int(line[1:])
               tb.set_FFT_SEL(value) 
+           if line[0]=='S':
+               fifoout=open("/tmp/arex_gw_tx",'w')
+               fifoout.write(str(int(4096*tb.rx_mag_level))+'\n')
+               close(fifoout)
                                                                                 
        except:
          break

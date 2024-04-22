@@ -25,17 +25,11 @@ import errno
         plutoip='ip:' + plutoip
         
 ########################################################
-# change the pluto sink definition to  this
+# change the audio definition if needed to this for linux (leave as is for PI)
 ########################################################
 
-#        self.pluto_sink_0 = iio.pluto_sink(plutoip, 1000000000, 528000, 2000000, 0x800, False, 0, '', True)
-        
-########################################################
-# change the pluto source definition to  this
-########################################################
-
-#        self.pluto_source_0 = iio.pluto_source(plutoip, 1000000000, 528000, 2000000, 0x800, True, True, True, "slow_attack", 64.0, '', True)
-
+        self.alsa_audio_source = alsa_audio_source = "plughw:3,0,1"
+        self.alsa_audio_sink = alsa_audio_sink = "plughw:3,0,0"
         
 #######################################################
 # Manually inserted Functions
@@ -43,19 +37,25 @@ import errno
 #######################################################
 def docommands(tb):
   try:
-    os.mkfifo("/tmp/arex_gw_trx")
+    os.mkfifo("/tmp/arex_gw_rx") # Commands Received by Radio
+  except OSError as oe:
+    if oe.errno != errno.EEXIST:
+      raise    
+  try:
+    os.mkfifo("/tmp/arex_gw_tx") # Commands Sent to Radio
   except OSError as oe:
     if oe.errno != errno.EEXIST:
       raise    
   ex=False
   lastbase=0
   while not ex:
-    fifoin=open("/tmp/arex_gw_trx",'r')
+    fifoin=open("/tmp/arex_gw_rx",'r')
     while True:
        try:
         with fifoin as filein:
          for line in filein:
            line=line.strip()
+           #print(line);
            if line[0]=='Q':
               ex=True                  
            if line[0]=='U':
@@ -126,6 +126,10 @@ def docommands(tb):
            if line[0]=='W':
               value=int(line[1:])
               tb.set_FFT_SEL(value) 
+           if line[0]=='S':
+               fifoout=open("/tmp/arex_gw_tx",'w')
+               fifoout.write(str(int(4096*tb.rx_mag_level))+'\n')
+               close(fifoout)
                                                                                 
        except:
          break

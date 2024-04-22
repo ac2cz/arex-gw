@@ -10,6 +10,20 @@
 # Description: Based on the Langstone radio by G4EML
 # GNU Radio version: 3.10.1.1
 
+from packaging.version import Version as StrictVersion
+
+if __name__ == '__main__':
+    import ctypes
+    import sys
+    if sys.platform.startswith('linux'):
+        try:
+            x11 = ctypes.cdll.LoadLibrary('libX11.so')
+            x11.XInitThreads()
+        except:
+            print("Warning: failed to XInitThreads()")
+
+from PyQt5 import Qt
+from gnuradio import eng_notation
 from gnuradio import analog
 from gnuradio import audio
 from gnuradio import blocks
@@ -21,20 +35,54 @@ import sys
 import signal
 from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
-from gnuradio import eng_notation
 from gnuradio import iio
+import time
+import threading
 
 
 
+from gnuradio import qtgui
 
-class arex_lang_trx_pluto(gr.top_block):
+class arex_lang_trx_pluto(gr.top_block, Qt.QWidget):
 
     def __init__(self):
         gr.top_block.__init__(self, "AREX GW Demonstration", catch_exceptions=True)
+        Qt.QWidget.__init__(self)
+        self.setWindowTitle("AREX GW Demonstration")
+        qtgui.util.check_set_qss()
+        try:
+            self.setWindowIcon(Qt.QIcon.fromTheme('gnuradio-grc'))
+        except:
+            pass
+        self.top_scroll_layout = Qt.QVBoxLayout()
+        self.setLayout(self.top_scroll_layout)
+        self.top_scroll = Qt.QScrollArea()
+        self.top_scroll.setFrameStyle(Qt.QFrame.NoFrame)
+        self.top_scroll_layout.addWidget(self.top_scroll)
+        self.top_scroll.setWidgetResizable(True)
+        self.top_widget = Qt.QWidget()
+        self.top_scroll.setWidget(self.top_widget)
+        self.top_layout = Qt.QVBoxLayout(self.top_widget)
+        self.top_grid_layout = Qt.QGridLayout()
+        self.top_layout.addLayout(self.top_grid_layout)
+
+        self.settings = Qt.QSettings("GNU Radio", "arex_lang_trx_pluto")
+
+        try:
+            if StrictVersion(Qt.qVersion()) < StrictVersion("5.0.0"):
+                self.restoreGeometry(self.settings.value("geometry").toByteArray())
+            else:
+                self.restoreGeometry(self.settings.value("geometry"))
+        except:
+            pass
 
         ##################################################
         # Variables
         ##################################################
+        self.rx_mag_level = rx_mag_level = 0
+        self.variable_qtgui_label_0 = variable_qtgui_label_0 = rx_mag_level
+        self.alsa_audio_source = alsa_audio_source = "plughw:3,0,1"
+        self.alsa_audio_sink = alsa_audio_sink = "plughw:3,0,0"
         self.Tx_Mode = Tx_Mode = 4
         self.Tx_LO = Tx_LO = 3483400000
         self.Tx_Gain = Tx_Gain = 0
@@ -61,6 +109,33 @@ class arex_lang_trx_pluto(gr.top_block):
         ##################################################
         # Blocks
         ##################################################
+        self.blocks_probe_signal_x_0 = blocks.probe_signal_f()
+        self._variable_qtgui_label_0_tool_bar = Qt.QToolBar(self)
+
+        if None:
+            self._variable_qtgui_label_0_formatter = None
+        else:
+            self._variable_qtgui_label_0_formatter = lambda x: str(x)
+
+        self._variable_qtgui_label_0_tool_bar.addWidget(Qt.QLabel("rx_mag_level"))
+        self._variable_qtgui_label_0_label = Qt.QLabel(str(self._variable_qtgui_label_0_formatter(self.variable_qtgui_label_0)))
+        self._variable_qtgui_label_0_tool_bar.addWidget(self._variable_qtgui_label_0_label)
+        self.top_layout.addWidget(self._variable_qtgui_label_0_tool_bar)
+        def _rx_mag_level_probe():
+          while True:
+
+            val = self.blocks_probe_signal_x_0.level()
+            try:
+              try:
+                self.doc.add_next_tick_callback(functools.partial(self.set_rx_mag_level,val))
+              except AttributeError:
+                self.set_rx_mag_level(val)
+            except AttributeError:
+              pass
+            time.sleep(1.0 / (100))
+        _rx_mag_level_thread = threading.Thread(target=_rx_mag_level_probe)
+        _rx_mag_level_thread.daemon = True
+        _rx_mag_level_thread.start()
         self.rational_resampler_xxx_0 = filter.rational_resampler_ccc(
                 interpolation=11,
                 decimation=1,
@@ -145,8 +220,8 @@ class arex_lang_trx_pluto(gr.top_block):
                 100,
                 window.WIN_HAMMING,
                 6.76))
-        self.audio_source_0 = audio.source(48000, "plughw:0,0,1", True)
-        self.audio_sink_0 = audio.sink(48000, "plughw:0,0,0", False)
+        self.audio_source_0 = audio.source(48000, alsa_audio_source, True)
+        self.audio_sink_0 = audio.sink(48000, alsa_audio_sink, False)
         self.analog_sig_source_x_1_0 = analog.sig_source_f(48000, analog.GR_SIN_WAVE, CTCSS/10.0, 0.15 * (CTCSS >0), 0, 0)
         self.analog_sig_source_x_1 = analog.sig_source_f(48000, analog.GR_COS_WAVE, 1750, 1.0*ToneBurst, 0, 0)
         self.analog_sig_source_x_0 = analog.sig_source_c(48000, analog.GR_COS_WAVE, 0, 1, 0, 0)
@@ -198,6 +273,7 @@ class arex_lang_trx_pluto(gr.top_block):
         self.connect((self.blocks_add_xx_1_0, 0), (self.blocks_float_to_complex_0, 0))
         self.connect((self.blocks_add_xx_2, 0), (self.band_pass_filter_0_0, 0))
         self.connect((self.blocks_complex_to_mag_0, 0), (self.blocks_multiply_const_vxx_2_1, 0))
+        self.connect((self.blocks_complex_to_mag_0, 0), (self.blocks_probe_signal_x_0, 0))
         self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_multiply_const_vxx_2, 0))
         self.connect((self.blocks_complex_to_real_0_0, 0), (self.blocks_multiply_const_vxx_2_1_0, 0))
         self.connect((self.blocks_float_to_complex_0, 0), (self.analog_agc3_xx_0, 0))
@@ -218,6 +294,40 @@ class arex_lang_trx_pluto(gr.top_block):
         self.connect((self.low_pass_filter_0, 0), (self.audio_sink_0, 0))
         self.connect((self.rational_resampler_xxx_0, 0), (self.iio_pluto_sink_0, 0))
 
+
+    def closeEvent(self, event):
+        self.settings = Qt.QSettings("GNU Radio", "arex_lang_trx_pluto")
+        self.settings.setValue("geometry", self.saveGeometry())
+        self.stop()
+        self.wait()
+
+        event.accept()
+
+    def get_rx_mag_level(self):
+        return self.rx_mag_level
+
+    def set_rx_mag_level(self, rx_mag_level):
+        self.rx_mag_level = rx_mag_level
+        self.set_variable_qtgui_label_0(self.rx_mag_level)
+
+    def get_variable_qtgui_label_0(self):
+        return self.variable_qtgui_label_0
+
+    def set_variable_qtgui_label_0(self, variable_qtgui_label_0):
+        self.variable_qtgui_label_0 = variable_qtgui_label_0
+        Qt.QMetaObject.invokeMethod(self._variable_qtgui_label_0_label, "setText", Qt.Q_ARG("QString", str(self._variable_qtgui_label_0_formatter(self.variable_qtgui_label_0))))
+
+    def get_alsa_audio_source(self):
+        return self.alsa_audio_source
+
+    def set_alsa_audio_source(self, alsa_audio_source):
+        self.alsa_audio_source = alsa_audio_source
+
+    def get_alsa_audio_sink(self):
+        return self.alsa_audio_sink
+
+    def set_alsa_audio_sink(self, alsa_audio_sink):
+        self.alsa_audio_sink = alsa_audio_sink
 
     def get_Tx_Mode(self):
         return self.Tx_Mode
@@ -382,26 +492,32 @@ class arex_lang_trx_pluto(gr.top_block):
 
 
 def main(top_block_cls=arex_lang_trx_pluto, options=None):
+
+    if StrictVersion("4.5.0") <= StrictVersion(Qt.qVersion()) < StrictVersion("5.0.0"):
+        style = gr.prefs().get_string('qtgui', 'style', 'raster')
+        Qt.QApplication.setGraphicsSystem(style)
+    qapp = Qt.QApplication(sys.argv)
+
     tb = top_block_cls()
+
+    tb.start()
+
+    tb.show()
 
     def sig_handler(sig=None, frame=None):
         tb.stop()
         tb.wait()
 
-        sys.exit(0)
+        Qt.QApplication.quit()
 
     signal.signal(signal.SIGINT, sig_handler)
     signal.signal(signal.SIGTERM, sig_handler)
 
-    tb.start()
+    timer = Qt.QTimer()
+    timer.start(500)
+    timer.timeout.connect(lambda: None)
 
-    try:
-        input('Press Enter to quit: ')
-    except EOFError:
-        pass
-    tb.stop()
-    tb.wait()
-
+    qapp.exec_()
 
 if __name__ == '__main__':
     main()
